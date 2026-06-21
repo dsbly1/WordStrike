@@ -11,10 +11,10 @@ class Game {
 public:
     explicit Game(std::unique_ptr<DifficultyStrategy> strategy);
 
-    void startGame(const std::string& secretWord);
+    // wordHint is displayed immediately after the word is chosen
+    void startGame(const std::string& secretWord, const std::string& wordHint = "");
 
     // Guard chain: INVALID_CHARS -> INVALID_LENGTH -> DUPLICATE -> CORRECT/PARTIAL/WRONG
-    // Only valid, non-duplicate guesses consume an attempt.
     std::vector<LetterFeedback> checkGuess(const std::string& input);
 
     void endGame(bool playerWon);
@@ -22,7 +22,7 @@ public:
     // Iteration 2 — UC-4: request a hint via HintEngine
     std::string requestHint();
 
-    bool isGameOver()     const;
+    bool isGameOver()      const;
     int  getAttemptsLeft() const;
     int  getWordLength()   const;
 
@@ -32,7 +32,7 @@ public:
 private:
     void notifyObservers(GameState state);
 
-    std::unique_ptr<DifficultyStrategy> difficulty; // RAII ownership via unique_ptr
+    std::unique_ptr<DifficultyStrategy> difficulty;
     std::vector<IObserver*>             observers;
     std::unique_ptr<HintEngine>         hintEngine;
 
@@ -41,6 +41,5 @@ private:
     int  hintsLeft;
     bool gameOver;
 
-    // Tracks guesses this round for duplicate detection
     std::vector<std::string> guessedWords;
 };

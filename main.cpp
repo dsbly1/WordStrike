@@ -31,15 +31,18 @@ int main() {
     // ── Load word bank ────────────────────────────────────────────────────
     WordRepository repo;
     try {
-        repo.loadWords("words.txt");
+        repo.loadWords("words_with_hints.txt");
     } catch (const std::runtime_error& e) {
         std::cerr << "[!] " << e.what() << "\n";
         std::cerr << "[!] Falling back to built-in word list.\n\n";
-        // Hard-coded fallback word list
-        std::ofstream fallback("words.txt");
-        fallback << "crane\noaken\nphase\ntable\nblaze\nshard\nglyph\nscowl\nbrisk\nflute\n";
+        std::ofstream fallback("words_with_hints.txt");
+        fallback << "crane|a large wading bird with a long neck and legs\n"
+                 << "oaken|made from the wood of an oak tree strong and sturdy\n"
+                 << "phase|a distinct period or stage in a process of change\n"
+                 << "table|a piece of furniture with a flat top and four legs\n"
+                 << "blaze|a large fiercely burning fire with bright hot flames\n";
         fallback.close();
-        try { repo.loadWords("words.txt"); }
+        try { repo.loadWords("words_with_hints.txt"); }
         catch (...) { std::cerr << "Fatal: could not load fallback words.\n"; return 1; }
     }
 
@@ -74,13 +77,15 @@ int main() {
             return 1;
         }
 
+        // Look up the hint for this word
+        std::string wordHint = repo.getHintFor(secretWord);
+
         // ── Set up game ───────────────────────────────────────────────────
         Game game(std::move(strategy));
-        game.registerObserver(&renderer);  // Observer registered at startup
-        game.startGame(secretWord);
+        game.registerObserver(&renderer);
+        game.startGame(secretWord, wordHint);  // hint displayed inside startGame
 
         player.resetSession();
-
         int attemptsUsed = 0;
 
         // ── Main game loop ────────────────────────────────────────────────
@@ -89,7 +94,7 @@ int main() {
             std::string input;
             std::getline(std::cin, input);
 
-            // Normalize leading/trailing whitespace
+            // Trim whitespace
             while (!input.empty() && std::isspace(static_cast<unsigned char>(input.front())))
                 input.erase(input.begin());
             while (!input.empty() && std::isspace(static_cast<unsigned char>(input.back())))
@@ -107,20 +112,18 @@ int main() {
                 continue;
             }
 
-            // ── Iteration 2: quit command ─────────────────────────────────
+            // ── quit command ──────────────────────────────────────────────
             if (input == "quit") {
-                std::cout << "Quitting current round. The word was: " << secretWord << "\n";
+                std::cout << "Quitting. The word was: " << secretWord << "\n";
                 break;
             }
 
             // ── Process guess through guard chain ─────────────────────────
             auto feedback = game.checkGuess(input);
-
             if (feedback.empty()) continue;
 
             GuessResult firstResult = feedback[0].result;
 
-            // Handle guard rejections (no attempt consumed)
             if (firstResult == GuessResult::INVALID_CHARS) {
                 renderer.displayError(GuessResult::INVALID_CHARS);
                 continue;
@@ -138,31 +141,20 @@ int main() {
             renderer.displayGuessFeedback(feedback);
             ++attemptsUsed;
 
-            if (!game.isGameOver()) {
+            if (!game.isGameOver())
                 renderer.displayAttemptsLeft(game.getAttemptsLeft());
-            }
         }
 
         // ── Round over ────────────────────────────────────────────────────
-        if (game.isGameOver()) {
-            bool won = game.getAttemptsLeft() >= 0;
-            // Check if won: all letters were CORRECT on last guess
-            // The observer already printed the win/loss message
-            if (!won || game.getAttemptsLeft() == 0) {
-                // Show the answer on loss
-                // (win message was displayed by FeedbackRenderer via Observer)
-            }
-            std::cout << "The word was: " << secretWord << "\n";
+        std::cout << "The word was: " << secretWord << "\n";
 
-            // Record in SessionManager
-            Result r;
-            r.word     = secretWord;
-            r.attempts = attemptsUsed;
-            r.won      = (game.getAttemptsLeft() > 0);
-            SessionManager::getInstance().recordResult(r);
-        }
+        Result r;
+        r.word     = secretWord;
+        r.attempts = attemptsUsed;
+        r.won      = game.isGameOver() && (game.getAttemptsLeft() > 0);
+        SessionManager::getInstance().recordResult(r);
 
-        // ── Iteration 2 — UC-5: show session history option ───────────────
+        // ── Iteration 2 — UC-5: session history option ────────────────────
         std::cout << "\n[H] View session history  [P] Play again  [Q] Quit\n> ";
         std::string cmd;
         std::getline(std::cin, cmd);
@@ -179,9 +171,7 @@ int main() {
         }
     }
 
-    std::cout << "\nThanks for playing WordStrike! Final session total: "
-              << SessionManager::getInstance().getTotalRoundsPlayed()
-              << " round(s).\n";
-
+    std::cout << "\nThanks for playing WordStrike! Rounds played: "
+              << SessionManager::getInstance().getTotalRoundsPlayed() << "\n";
     return 0;
 }

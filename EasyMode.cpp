@@ -7,6 +7,7 @@ void EasyMode::applyRules() {
     getWordLengthRange(min, max);
     std::cout << "Easy mode selected. Good luck!\n";
     std::cout << "A " << min << "-" << max << " letter word has been chosen.\n";
+    std::cout << "Hints available: " << getHintsAllowed() << " (type 'hint' to reveal a letter)\n";
 }
 
 int EasyMode::getMaxAttempts() const  { return 8; }

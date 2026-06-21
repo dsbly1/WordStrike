@@ -7,6 +7,7 @@ void MediumMode::applyRules() {
     getWordLengthRange(min, max);
     std::cout << "Medium mode selected. Good luck!\n";
     std::cout << "A " << min << "-" << max << " letter word has been chosen.\n";
+    std::cout << "Hints available: " << getHintsAllowed() << " (type 'hint' to reveal a letter)\n";
 }
 
 int MediumMode::getMaxAttempts()  const { return 6; }

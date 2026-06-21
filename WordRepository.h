@@ -1,22 +1,25 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <unordered_map>
 
 class WordRepository {
 public:
-    // Throws std::runtime_error if file is missing or empty after filtering
+    // Loads words and hints from a pipe-delimited file: WORD|HINT
+    // Falls back to words.txt if words_with_hints.txt is not found
     void loadWords(const std::string& filename);
 
-    // Returns words matching the given length range
     std::vector<std::string> filterByDifficulty(int minLen, int maxLen) const;
 
-    // Returns a random word from the filtered list
-    // Throws std::runtime_error if the filtered list is empty
+    // Returns a random word in the given length range
     std::string getRandomWord(int minLen, int maxLen) const;
 
-    // Returns true if the word exists in the full word bank
+    // Returns the hint for a given word, or empty string if none exists
+    std::string getHintFor(const std::string& word) const;
+
     bool isValidWord(const std::string& word) const;
 
 private:
-    std::vector<std::string> wordBank;
+    std::vector<std::string>              wordBank;
+    std::unordered_map<std::string, std::string> hintMap;
 };
