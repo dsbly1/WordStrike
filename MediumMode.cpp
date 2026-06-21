@@ -1,0 +1,18 @@
+#include "MediumMode.h"
+#include <iostream>
+
+// Medium: 6 attempts, 1 hint, 5-6 letter words
+void MediumMode::applyRules() {
+    int min, max;
+    getWordLengthRange(min, max);
+    std::cout << "Medium mode selected. Good luck!\n";
+    std::cout << "A " << min << "-" << max << " letter word has been chosen.\n";
+}
+
+int MediumMode::getMaxAttempts()  const { return 6; }
+int MediumMode::getHintsAllowed() const { return 1; }
+
+void MediumMode::getWordLengthRange(int& min, int& max) const {
+    min = 5;
+    max = 6;
+}
